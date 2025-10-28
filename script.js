@@ -1,40 +1,53 @@
-const movies = [
-  { title: 'Starlit Journey', genre: 'Sci-Fi', rating: 8.2, poster: 'https://picsum.photos/seed/starlit/300/420' },
-  { title: 'Midnight Heist', genre: 'Action', rating: 7.6, poster: 'https://picsum.photos/seed/heist/300/420' },
-  { title: 'Parallel Lives', genre: 'Romance', rating: 8.7, poster: 'https://picsum.photos/seed/parallel/300/420' },
-  { title: 'Laugh Track', genre: 'Comedy', rating: 6.9, poster: 'https://picsum.photos/seed/laugh/300/420' },
-  { title: 'Mystery at Hollow House', genre: 'Horror', rating: 7.3, poster: 'https://picsum.photos/seed/hollow/300/420' },
-  { title: 'Code of Tomorrow', genre: 'Sci-Fi', rating: 8.0, poster: 'https://picsum.photos/seed/code/300/420' }
-];
+// Replace with your own NewsAPI key if available
+const API_KEY = "YOUR_NEWS_API_KEY"; // get one free from https://newsapi.org/
+const container = document.getElementById("newsContainer");
+const searchBtn = document.getElementById("searchBtn");
+const searchInput = document.getElementById("searchInput");
 
-const movieList = document.getElementById('movieList');
-const searchBox = document.getElementById('searchBox');
+// Fetch news articles
+async function fetchNews(query = "technology") {
+  container.innerHTML = "<p>Loading news...</p>";
 
-function renderMovies(list) {
-  movieList.innerHTML = '';
-  list.forEach(m => {
-    const card = document.createElement('div');
-    card.className = 'movie-card';
+  try {
+    const url = `https://newsapi.org/v2/everything?q=${query}&language=en&pageSize=9&apiKey=${API_KEY}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.articles && data.articles.length > 0) {
+      displayNews(data.articles);
+    } else {
+      container.innerHTML = "<p>No news found.</p>";
+    }
+  } catch (error) {
+    console.error("Error fetching news:", error);
+    container.innerHTML = "<p>Failed to load news. Please check your connection.</p>";
+  }
+}
+
+// Display news in cards
+function displayNews(articles) {
+  container.innerHTML = "";
+  articles.forEach(article => {
+    const card = document.createElement("div");
+    card.classList.add("news-card");
+
     card.innerHTML = `
-      <img src="${m.poster}" alt="${m.title}" />
-      <div class="movie-info">
-        <h3>${m.title}</h3>
-        <p>${m.genre} • ⭐ ${m.rating}</p>
-        <button class="like-btn">♡</button>
+      <img src="${article.urlToImage || 'https://via.placeholder.com/300x180?text=No+Image'}" alt="News image">
+      <div class="content">
+        <h3>${article.title}</h3>
+        <p>${article.description || "No description available."}</p>
+        <a href="${article.url}" target="_blank">Read More →</a>
       </div>
     `;
-    const btn = card.querySelector('.like-btn');
-    btn.addEventListener('click', () => {
-      btn.textContent = btn.textContent === '♡' ? '♥' : '♡';
-    });
-    movieList.appendChild(card);
+    container.appendChild(card);
   });
 }
 
-renderMovies(movies);
-
-searchBox.addEventListener('input', e => {
-  const q = e.target.value.toLowerCase();
-  const filtered = movies.filter(m => m.title.toLowerCase().includes(q));
-  renderMovies(filtered);
+// Event listener for search
+searchBtn.addEventListener("click", () => {
+  const query = searchInput.value.trim();
+  fetchNews(query || "latest");
 });
+
+// Fetch default news on page load
+fetchNews();
